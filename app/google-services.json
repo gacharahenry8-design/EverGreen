@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "460590420938",
+    "project_id": "evergreen-af353",
+    "storage_bucket": "evergreen-af353.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:460590420938:android:903987d11a8ec00a023533",
+        "android_client_info": {
+          "package_name": "com.company.EverGreen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwqj3AgyMkxiM4R5DIYhhqvgzp0FcnWJM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
