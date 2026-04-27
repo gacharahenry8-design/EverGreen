@@ -31,8 +31,7 @@ fun AppNavHost(
         }
 
         composable(Routes.REGISTER) {
-            // RegisterScreen(navController = navController)
-            PlaceholderScreen("Register")
+            com.example.evergreen.ui.theme.screens.signup.SignUpScreen(navController = navController)
         }
 
         // ── Main app ──────────────────────────────────────────────────────────
