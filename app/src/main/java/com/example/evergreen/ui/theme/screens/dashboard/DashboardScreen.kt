@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.evergreen.data.EverGreenViewModel
+import com.example.evergreen.models.UserModel
+import com.example.evergreen.models.CarbonEntry
 import com.example.evergreen.navigation.*
 import com.example.evergreen.ui.theme.*
 import android.content.res.Configuration
@@ -37,7 +39,7 @@ fun DashboardScreen(
     navController: NavController,
     vm: EverGreenViewModel = viewModel()
 ) {
-    val user          by vm.user.collectAsState()
+    val user by vm.user.collectAsState()
     val carbonEntries by vm.carbonEntries.collectAsState()
 
     // Load data on first composition
@@ -47,16 +49,45 @@ fun DashboardScreen(
         vm.loadHabits()
     }
 
-    val points    = user?.totalPoints ?: 0
-    val score     = vm.getSustainabilityScore()
-    val weekly    = vm.weeklyEmissions
-    val todayKg   = vm.todayEmission
-    val savedCo2  = vm.getSavedCo2Today()
-    val trees     = vm.getTreesEquivalent(savedCo2)
-    val carKm     = vm.getCarKmEquivalent(savedCo2)
-    val tips      = carbonEntries.lastOrNull()?.let { vm.getRecommendations(it) }
-        ?: listOf("Log your first carbon entry to get personalised tips!")
+    val points = user?.totalPoints ?: 0
+    val savedCo2 = vm.getSavedCo2Today()
 
+    DashboardContent(
+        user = user,
+        streak = vm.streak,
+        score = vm.getSustainabilityScore(),
+        weekly = vm.weeklyEmissions,
+        savedCo2 = savedCo2,
+        trees = vm.getTreesEquivalent(savedCo2),
+        carKm = vm.getCarKmEquivalent(savedCo2),
+        tips = carbonEntries.lastOrNull()?.let { vm.getRecommendations(it) }
+            ?: listOf("Log your first carbon entry to get personalised tips!"),
+        points = points,
+        level = vm.getLevel(points),
+        pointsToNext = vm.getPointsToNextLevel(points),
+        levelProgress = vm.getLevelProgress(points),
+        nextLevelLabel = vm.getNextLevelLabel(points),
+        navController = navController
+    )
+}
+
+@Composable
+fun DashboardContent(
+    user: UserModel?,
+    streak: Int,
+    score: Int,
+    weekly: List<Double>,
+    savedCo2: Double,
+    trees: Double,
+    carKm: Double,
+    tips: List<String>,
+    points: Int,
+    level: String,
+    pointsToNext: Int,
+    levelProgress: Float,
+    nextLevelLabel: String,
+    navController: NavController
+) {
     Scaffold(
         bottomBar = { EverGreenBottomBar(navController, Routes.DASHBOARD) },
         containerColor = EverGreenSurface
@@ -106,7 +137,7 @@ fun DashboardScreen(
                                 Text("🔥", fontSize = 14.sp)
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    text = "${vm.streak}",
+                                    text = "$streak",
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
@@ -168,7 +199,7 @@ fun DashboardScreen(
                             color = EverGreenPale
                         ) {
                             Text(
-                                text     = vm.getLevel(points),
+                                text     = level,
                                 fontSize = 12.sp,
                                 color    = EverGreenPrimary,
                                 fontWeight = FontWeight.Medium,
@@ -287,7 +318,7 @@ fun DashboardScreen(
                                 color = LeafGoldLight
                             ) {
                                 Text(
-                                    text     = "${vm.getPointsToNextLevel(points)} pts to go",
+                                    text     = "$pointsToNext pts to go",
                                     fontSize = 10.sp,
                                     color    = LeafGold,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -296,7 +327,7 @@ fun DashboardScreen(
                         }
                         Spacer(Modifier.height(8.dp))
                         LinearProgressIndicator(
-                            progress    = { vm.getLevelProgress(points) },
+                            progress    = { levelProgress },
                             modifier    = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)
@@ -311,12 +342,12 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text     = vm.getLevel(points),
+                                text     = level,
                                 fontSize = 10.sp,
                                 color    = CarbonGrayLight
                             )
                             Text(
-                                text     = vm.getNextLevelLabel(points),
+                                text     = nextLevelLabel,
                                 fontSize = 10.sp,
                                 color    = CarbonGrayLight
                             )
@@ -633,6 +664,25 @@ fun MilestoneRow(badges: List<Badge>) {
 fun DashboardPreview() {
     EverGreenTheme {
         val navController = rememberNavController()
-        DashboardScreen(navController = navController)
+        DashboardContent(
+            user = UserModel(username = "Eco Hero", totalPoints = 450),
+            streak = 5,
+            score = 82,
+            weekly = listOf(12.0, 15.0, 10.0, 18.0, 9.0, 11.0, 8.5),
+            savedCo2 = 4.5,
+            trees = 0.23,
+            carKm = 18.0,
+            tips = listOf(
+                "Try public transport twice a week — save up to 30 kg CO₂/month",
+                "Switch to LED bulbs and unplug devices when idle",
+                "Replace one meat meal per day with plant-based food"
+            ),
+            points = 450,
+            level = "Green Champion 🌳",
+            pointsToNext = 50,
+            levelProgress = 0.8f,
+            nextLevelLabel = "Planet Guardian 🌎",
+            navController = navController
+        )
     }
 }
