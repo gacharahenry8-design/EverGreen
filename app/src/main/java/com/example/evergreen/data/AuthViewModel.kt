@@ -4,8 +4,10 @@ import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.evergreen.models.UserModel
 import com.example.evergreen.navigation.Routes
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,6 +20,7 @@ import kotlinx.coroutines.tasks.await
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseDatabase.getInstance().reference
     private val context get() = getApplication<Application>().applicationContext
 
     // ── Loading state ─────────────────────────────────────────────────────────
@@ -43,7 +46,11 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                auth.createUserWithEmailAndPassword(email, pass).await()
+                val result = auth.createUserWithEmailAndPassword(email, pass).await()
+                val userId = result.user?.uid
+                if (userId != null) {
+                    saveUserToDatabase(userId, name, email)
+                }
                 Toast.makeText(context, "Signup successful!", Toast.LENGTH_SHORT).show()
                 _navigationEvent.emit(Routes.DASHBOARD)
             } catch (e: Exception) {
@@ -52,6 +59,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _isLoading.value = false
             }
         }
+    }
+
+    private suspend fun saveUserToDatabase(userId: String, name: String, email: String) {
+        val user = UserModel(
+            id = userId,
+            username = name,
+            email = email,
+            totalPoints = 0,
+            level = "Seedling 🌱"
+        )
+        db.child("Users").child(userId).setValue(user).await()
     }
 
     // ─────────────────────────────────────────────────────────────────────────
