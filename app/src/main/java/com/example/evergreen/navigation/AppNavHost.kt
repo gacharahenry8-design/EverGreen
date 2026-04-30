@@ -17,7 +17,7 @@ import androidx.navigation.navArgument
 import com.example.evergreen.ui.screens.auth.LoginScreen
 import com.example.evergreen.ui.screens.auth.RegisterScreen
 import com.example.evergreen.ui.theme.screens.splash.SplashScreen
-import com.example.evergreen.ui.screens.dashboard.DashboardScreen
+import com.example.evergreen.ui.theme.screens.dashboard.DashboardScreen
 
 @Composable
 fun AppNavHost(

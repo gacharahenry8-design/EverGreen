@@ -1,8 +1,11 @@
-package com.example.evergreen.ui.screens.dashboard
+package com.example.evergreen.ui.theme.screens.dashboard
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,22 +20,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.evergreen.data.EverGreenViewModel
-import com.example.evergreen.models.UserModel
 import com.example.evergreen.models.CarbonEntry
+import com.example.evergreen.models.UserModel
 import com.example.evergreen.navigation.*
 import com.example.evergreen.ui.theme.*
-import android.content.res.Configuration
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
+import java.util.Calendar
 
 @Composable
 fun DashboardScreen(
@@ -52,8 +53,16 @@ fun DashboardScreen(
     val points = user?.totalPoints ?: 0
     val savedCo2 = vm.getSavedCo2Today()
 
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    val greeting = when {
+        hour < 12 -> "Good morning ☀️"
+        hour < 17 -> "Good afternoon 🌤️"
+        else      -> "Good evening 🌙"
+    }
+
     DashboardContent(
         user = user,
+        userGreeting = greeting,
         streak = vm.streak,
         score = vm.getSustainabilityScore(),
         weekly = vm.weeklyEmissions,
@@ -74,6 +83,7 @@ fun DashboardScreen(
 @Composable
 fun DashboardContent(
     user: UserModel?,
+    userGreeting: String,
     streak: Int,
     score: Int,
     weekly: List<Double>,
@@ -113,8 +123,9 @@ fun DashboardContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
+
                         Text(
-                            text     = "Good morning",
+                            text     = userGreeting,
                             fontSize = 12.sp,
                             color    = EverGreenLight
                         )
@@ -569,6 +580,7 @@ private fun QuickStatCard(
     }
 }
 
+
 // ── Shared bottom navigation bar ──────────────────────────────────────────────
 @Composable
 fun EverGreenBottomBar(navController: NavController, currentRoute: String) {
@@ -666,6 +678,7 @@ fun DashboardPreview() {
         val navController = rememberNavController()
         DashboardContent(
             user = UserModel(username = "Eco Hero", totalPoints = 450),
+            userGreeting = "Good morning ☀️",
             streak = 5,
             score = 82,
             weekly = listOf(12.0, 15.0, 10.0, 18.0, 9.0, 11.0, 8.5),

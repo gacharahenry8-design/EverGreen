@@ -226,3 +226,30 @@ class EverGreenViewModel : ViewModel() {
     fun signOut() = auth.signOut()
 }
 
+fun saveCarbonEntry(
+    transportEmission: Double,
+    electricityEmission: Double,
+    foodEmission: Double,
+    totalEmission: Double,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit
+) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    val entry = CarbonEntry(
+        userId              = userId,
+        transportEmission   = transportEmission,
+        electricityEmission = electricityEmission,
+        foodEmission        = foodEmission,
+        totalEmission       = totalEmission,
+        date                = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    )
+    val ref = FirebaseDatabase.getInstance().getReference("CarbonEntries").push()
+    entry.id = ref.key
+    ref.setValue(entry)
+        .addOnSuccessListener {
+            updateUserPoints(userId, 10)
+            onSuccess()
+        }
+        .addOnFailureListener { onError(it.message ?: "Failed") }
+}
+
