@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -33,12 +34,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.database.FirebaseDatabase
-import com.example.evergreen.models.UserModel
-import com.example.evergreen.navigation.navigateToDashboard
+import com.example.evergreen.data.AuthViewModel
+import com.example.evergreen.navigation.Routes
 import com.example.evergreen.navigation.navigateToLoginFromRegister
 import com.example.evergreen.ui.theme.*
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,7 +45,11 @@ import androidx.navigation.compose.rememberNavController
 
 // ─── Register Screen ──────────────────────────────────────────────────────────
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(
+    navController: NavController,
+    vm: AuthViewModel = viewModel()
+) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -56,73 +59,19 @@ fun RegisterScreen(navController: NavController) {
     var confirmPassword  by remember { mutableStateOf("") }
     var showPassword     by remember { mutableStateOf(false) }
     var showConfirm      by remember { mutableStateOf(false) }
-    var isLoading        by remember { mutableStateOf(false) }
-    var errorMessage     by remember { mutableStateOf<String?>(null) }
+    
+    val isLoading by vm.isLoading.collectAsState()
+    val errorMsg by vm.errorMessage.collectAsState()
 
     val passwordStrength = getPasswordStrength(password)
 
-    // ── Validation ────────────────────────────────────────────────────────────
-    fun validate(): Boolean {
-        return when {
-            fullName.isBlank() -> {
-                errorMessage = "Please enter your full name"; false
+    // Handle navigation events from ViewModel
+    LaunchedEffect(Unit) {
+        vm.navigationEvent.collect { route ->
+            navController.navigate(route) {
+                popUpTo(Routes.REGISTER) { inclusive = true }
             }
-            email.isBlank() || !email.contains("@") -> {
-                errorMessage = "Please enter a valid email"; false
-            }
-            password.length < 6 -> {
-                errorMessage = "Password must be at least 6 characters"; false
-            }
-            password != confirmPassword -> {
-                errorMessage = "Passwords do not match"; false
-            }
-            else -> true
         }
-    }
-
-    // ── Register logic ────────────────────────────────────────────────────────
-    fun register() {
-        if (!validate()) return
-        isLoading    = true
-        errorMessage = null
-        focusManager.clearFocus()
-
-        FirebaseAuth.getInstance()
-            .createUserWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = task.result?.user ?: return@addOnCompleteListener
-
-                    val profileUpdate = UserProfileChangeRequest.Builder()
-                        .setDisplayName(fullName.trim())
-                        .build()
-
-                    user.updateProfile(profileUpdate)
-
-                    val userModel = UserModel(
-                        id          = user.uid,
-                        username    = fullName.trim(),
-                        email       = email.trim(),
-                        totalPoints = 0,
-                        level       = "Beginner 🌱"
-                    )
-
-                    FirebaseDatabase.getInstance()
-                        .getReference("Users/${user.uid}")
-                        .setValue(userModel)
-                        .addOnCompleteListener { dbTask ->
-                            isLoading = false // Move this here to ensure it stops after DB save
-                            if (dbTask.isSuccessful) {
-                                navController.navigateToDashboard()
-                            } else {
-                                errorMessage = "Account created, but failed to save profile data."
-                            }
-                        }
-                } else {
-                    isLoading    = false
-                    errorMessage = task.exception?.localizedMessage ?: "Registration failed"
-                }
-            }
     }
 
     // ── UI ────────────────────────────────────────────────────────────────────
@@ -208,11 +157,11 @@ fun RegisterScreen(navController: NavController) {
 
             // ── Error banner ──────────────────────────────────────────────────
             AnimatedVisibility(
-                visible = errorMessage != null,
+                visible = errorMsg != null,
                 enter   = fadeIn(),
                 exit    = fadeOut()
             ) {
-                errorMessage?.let { msg ->
+                errorMsg?.let { msg ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -235,7 +184,7 @@ fun RegisterScreen(navController: NavController) {
             // ── Full name field ───────────────────────────────────────────────
             OutlinedTextField(
                 value         = fullName,
-                onValueChange = { fullName = it; errorMessage = null },
+                onValueChange = { fullName = it; vm.clearError() },
                 label         = { Text("Full name") },
                 leadingIcon   = {
                     Icon(Icons.Filled.Person, contentDescription = "Name", tint = EverGreenAccent)
@@ -263,7 +212,7 @@ fun RegisterScreen(navController: NavController) {
             // ── Email field ───────────────────────────────────────────────────
             OutlinedTextField(
                 value         = email,
-                onValueChange = { email = it; errorMessage = null },
+                onValueChange = { email = it; vm.clearError() },
                 label         = { Text("Email address") },
                 leadingIcon   = {
                     Icon(Icons.Filled.Email, contentDescription = "Email", tint = EverGreenAccent)
@@ -291,7 +240,7 @@ fun RegisterScreen(navController: NavController) {
             // ── Password field + strength bar ─────────────────────────────────
             OutlinedTextField(
                 value         = password,
-                onValueChange = { password = it; errorMessage = null },
+                onValueChange = { password = it; vm.clearError() },
                 label         = { Text("Password") },
                 leadingIcon   = {
                     Icon(Icons.Filled.Lock, contentDescription = "Password", tint = EverGreenAccent)
@@ -386,7 +335,7 @@ fun RegisterScreen(navController: NavController) {
             // ── Confirm password field ────────────────────────────────────────
             OutlinedTextField(
                 value         = confirmPassword,
-                onValueChange = { confirmPassword = it; errorMessage = null },
+                onValueChange = { confirmPassword = it; vm.clearError() },
                 label         = { Text("Confirm password") },
                 leadingIcon   = {
                     Icon(Icons.Filled.Lock, contentDescription = "Confirm", tint = EverGreenAccent)
@@ -408,7 +357,11 @@ fun RegisterScreen(navController: NavController) {
                     imeAction    = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { register() }
+                    onDone = { 
+                        if (password == confirmPassword) {
+                            vm.signUpUser(email, password, fullName)
+                        }
+                    }
                 ),
                 singleLine  = true,
                 isError     = confirmPassword.isNotEmpty() && confirmPassword != password,
@@ -432,7 +385,11 @@ fun RegisterScreen(navController: NavController) {
 
             // ── Create account button ─────────────────────────────────────────
             Button(
-                onClick  = { register() },
+                onClick  = { 
+                    if (password == confirmPassword) {
+                        vm.signUpUser(email, password, fullName)
+                    }
+                },
                 enabled  = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -484,7 +441,8 @@ fun RegisterScreen(navController: NavController) {
 
             // ── Google sign-up button ─────────────────────────────────────────
             OutlinedButton(
-                onClick  = { /* TODO: implement Google Sign-In */ },
+                onClick  = { vm.signInWithGoogle(context) },
+                enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

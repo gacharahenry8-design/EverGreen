@@ -14,9 +14,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.evergreen.ui.screens.auth.LoginScreen
 import com.example.evergreen.ui.screens.auth.RegisterScreen
 import com.example.evergreen.ui.theme.screens.splash.SplashScreen
-import com.example.evergreen.ui.screens.auth.RegisterScreen
+import com.example.evergreen.ui.screens.dashboard.DashboardScreen
+
 @Composable
 fun AppNavHost(
     navController: NavHostController = rememberNavController(),
@@ -34,8 +36,7 @@ fun AppNavHost(
 
         // --- Auth Screens ---
         composable(Routes.LOGIN) {
-            // Swap with LoginScreen(navController) once created
-            PlaceholderScreen("Login")
+            LoginScreen(navController = navController)
         }
 
         composable(Routes.REGISTER) {
@@ -44,7 +45,7 @@ fun AppNavHost(
 
         // --- Main App Screens ---
         composable(Routes.DASHBOARD) {
-            PlaceholderScreen("Dashboard")
+            DashboardScreen(navController = navController)
         }
 
         composable(Routes.ADD_CARBON) {
