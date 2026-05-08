@@ -134,6 +134,7 @@ fun ProfileScreen(
         streak = vm.streak,
         badges = milestoneBadges,
         onLogout = { vmAuth.logoutUser() },
+        onUploadImage = { uri -> vm.uploadProfileImage(uri) },
         navController = navController
     )
 }
@@ -150,6 +151,7 @@ fun ProfileContent(
     streak: Int,
     badges: List<MilestoneBadge>,
     onLogout: () -> Unit,
+    onUploadImage: (Uri) -> Unit,
     navController: NavController
 ) {
 
@@ -162,11 +164,10 @@ fun ProfileContent(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        selectedImageUri = uri
-
-        // TODO:
-        // Upload image to Firebase Storage
-        // Save URL to Firestore
+        if (uri != null) {
+            selectedImageUri = uri
+            onUploadImage(uri)
+        }
     }
 
     if (showLogoutDialog) {
@@ -873,6 +874,7 @@ fun ProfileScreenPreview() {
             streak        = 7,
             badges        = emptyList(),
             onLogout      = {},
+            onUploadImage = {},
             navController = rememberNavController()
         )
     }

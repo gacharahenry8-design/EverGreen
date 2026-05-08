@@ -1,11 +1,15 @@
 package com.example.evergreen.data
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.example.evergreen.models.CarbonEntry
 import com.example.evergreen.models.HabitModel
 import com.example.evergreen.models.UserModel
+import com.cloudinary.android.MediaManager
+import com.cloudinary.android.callback.ErrorInfo
+import com.cloudinary.android.callback.UploadCallback
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -249,6 +253,36 @@ class EverGreenViewModel : ViewModel() {
         val newPoints     = currentPoints + addPoints
         db.child("Users").child(uid).child("totalPoints").setValue(newPoints)
         db.child("Users").child(uid).child("level").setValue(getLevel(newPoints))
+    }
+
+    // ── Cloudinary: Upload image ─────────────────────────────────────────────
+    fun uploadProfileImage(imageUri: Uri) {
+        MediaManager.get().upload(imageUri)
+            .unsigned("evergreen_preset") // Use the preset you created
+            .option("folder", "user_uploads") // Optional: organize files
+            .callback(object : UploadCallback {
+                override fun onStart(requestId: String) {
+                    // Show a loading spinner in your UI
+                }
+                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {
+                    // Update a progress bar
+                }
+                override fun onSuccess(requestId: String, resultData: Map<*, *>) {
+                    val imageUrl = resultData["secure_url"] as String
+                    // SUCCESS! Now save this URL to your Firebase database
+                    saveUrlToFirebase(imageUrl)
+                }
+                override fun onError(requestId: String, error: ErrorInfo) {
+                    // Handle the error (e.g., Toast message)
+                }
+                override fun onReschedule(requestId: String, error: ErrorInfo) {}
+            })
+            .dispatch()
+    }
+
+    private fun saveUrlToFirebase(imageUrl: String) {
+        val uid = auth.currentUser?.uid ?: return
+        db.child("Users").child(uid).child("profileImageUrl").setValue(imageUrl)
     }
 
     // ── Firebase: sign out ────────────────────────────────────────────────────

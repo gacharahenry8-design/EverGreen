@@ -51,6 +51,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation(libs.firebase.database)
+
+    implementation("com.cloudinary:cloudinary-android:3.0.2")
     
     // Auth & Credentials
     implementation(libs.androidx.credentials)
