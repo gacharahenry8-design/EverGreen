@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
@@ -53,6 +54,6 @@ data class BottomNavItem(
 val bottomNavItems = listOf(
     BottomNavItem("Dashboard", Icons.Default.Dashboard, Routes.DASHBOARD),
     BottomNavItem("Habits", Icons.Default.Eco, Routes.HABITS),
-    BottomNavItem("History", Icons.Default.History, Routes.CARBON_DETAIL.replace("/{entryId}", "")), // Fallback or specific route
+    BottomNavItem("Tips", Icons.Default.Lightbulb, Routes.RECOMMENDATIONS),
     BottomNavItem("Profile", Icons.Default.Person, Routes.PROFILE)
 )

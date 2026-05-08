@@ -8,16 +8,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.evergreen.data.EverGreenViewModel
 import com.example.evergreen.ui.screens.auth.LoginScreen
 import com.example.evergreen.ui.screens.auth.RegisterScreen
 import com.example.evergreen.ui.theme.screens.splash.SplashScreen
-import com.example.evergreen.ui.theme.screens.dashboard.DashboardScreen
+import com.example.evergreen.ui.theme.screens.dashboard.*
 
 @Composable
 fun AppNavHost(
@@ -39,6 +41,7 @@ fun AppNavHost(
             LoginScreen(navController = navController)
         }
 
+        // --- Registration ---
         composable(Routes.REGISTER) {
             RegisterScreen(navController = navController)
         }
@@ -48,20 +51,32 @@ fun AppNavHost(
             DashboardScreen(navController = navController)
         }
 
+        // --- Carbon Logging ---
         composable(Routes.ADD_CARBON) {
-            PlaceholderScreen("Add Carbon Entry")
+            AddCarbonScreen(navController = navController)
         }
 
+        // --- Habits Screen ---
         composable(Routes.HABITS) {
-            PlaceholderScreen("Habit Tracker")
+            HabitsScreen(navController = navController)
         }
 
+        // --- Recommendations ---
         composable(Routes.RECOMMENDATIONS) {
-            PlaceholderScreen("Recommendations")
+            RecommendationsScreen(navController = navController)
         }
 
+        // --- Profile & Settings ---
         composable(Routes.PROFILE) {
-            PlaceholderScreen("User Profile")
+            ProfileScreen(navController = navController)
+        }
+        
+        composable(Routes.EDIT_PROFILE) { 
+            EditProfileScreen(navController = navController) 
+        }
+
+        composable(Routes.NOTIFICATIONS) { 
+            NotificationSettingsScreen(navController = navController) 
         }
 
         // --- Detail Screens (Passing Arguments) ---

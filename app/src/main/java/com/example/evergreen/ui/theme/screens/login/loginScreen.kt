@@ -46,14 +46,6 @@ fun LoginScreen(
     navController: NavController,
     vm: AuthViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
-
-    // ── State ─────────────────────────────────────────────────────────────────
-    var email         by remember { mutableStateOf("") }
-    var password      by remember { mutableStateOf("") }
-    var showPassword  by remember { mutableStateOf(false) }
-    
     val isLoading by vm.isLoading.collectAsState()
     val errorMsg by vm.errorMessage.collectAsState()
 
@@ -65,6 +57,30 @@ fun LoginScreen(
             }
         }
     }
+
+    LoginScreenContent(
+        isLoading = isLoading,
+        errorMsg = errorMsg,
+        onLogin = { email, password -> vm.loginUser(email, password) },
+        onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
+        onClearError = { vm.clearError() }
+    )
+}
+
+@Composable
+fun LoginScreenContent(
+    isLoading: Boolean,
+    errorMsg: String?,
+    onLogin: (String, String) -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onClearError: () -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    var email         by remember { mutableStateOf("") }
+    var password      by remember { mutableStateOf("") }
+    var showPassword  by remember { mutableStateOf(false) }
 
     // ── UI ────────────────────────────────────────────────────────────────────
     Box(
@@ -119,12 +135,12 @@ fun LoginScreen(
                         text       = "EverGreen",
                         fontSize   = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color      = EverGreenDark
+                        color      = Color.Black
                     )
                     Text(
                         text          = "TRACK. REDUCE. SUSTAIN.",
                         fontSize      = 9.sp,
-                        color         = CarbonGrayLight,
+                        color         = Color.Black,
                         letterSpacing = 1.5.sp
                     )
                 }
@@ -135,13 +151,13 @@ fun LoginScreen(
                 text       = "Welcome back",
                 fontSize   = 26.sp,
                 fontWeight = FontWeight.SemiBold,
-                color      = EverGreenDark,
+                color      = Color.Black,
                 modifier   = Modifier.fillMaxWidth()
             )
             Text(
-                text     = "Sign in to your account",
+                text     = "log in to your account",
                 fontSize = 14.sp,
-                color    = CarbonGrayLight,
+                color    = Color.Black,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp, bottom = 20.dp)
@@ -174,8 +190,8 @@ fun LoginScreen(
             // ── Email field ───────────────────────────────────────────────────
             OutlinedTextField(
                 value         = email,
-                onValueChange = { email = it; vm.clearError() },
-                label         = { Text("Email address") },
+                onValueChange = { email = it; onClearError() },
+                label         = { Text("Email address", color = Color.Black) },
                 leadingIcon   = { Icon(Icons.Filled.Email, "Email", tint = EverGreenAccent) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
@@ -183,16 +199,20 @@ fun LoginScreen(
                 modifier   = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = EverGreenPrimary,
-                    unfocusedBorderColor = EverGreenLight
+                    unfocusedBorderColor = EverGreenLight,
+                    focusedLabelColor = Color.Black,
+                    unfocusedLabelColor = Color.Black
                 )
             )
 
             // ── Password field ────────────────────────────────────────────────
             OutlinedTextField(
                 value         = password,
-                onValueChange = { password = it; vm.clearError() },
-                label         = { Text("Password") },
+                onValueChange = { password = it; onClearError() },
+                label         = { Text("Password", color = Color.Black) },
                 leadingIcon   = { Icon(Icons.Filled.Lock, "Password", tint = EverGreenAccent) },
                 trailingIcon = {
                     IconButton(onClick = { showPassword = !showPassword }) {
@@ -205,13 +225,17 @@ fun LoginScreen(
                 },
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { vm.loginUser(email, password) }),
+                keyboardActions = KeyboardActions(onDone = { onLogin(email, password) }),
                 singleLine = true,
                 modifier   = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = EverGreenPrimary,
-                    unfocusedBorderColor = EverGreenLight
+                    unfocusedBorderColor = EverGreenLight,
+                    focusedLabelColor = Color.Black,
+                    unfocusedLabelColor = Color.Black
                 )
             )
 
@@ -228,7 +252,7 @@ fun LoginScreen(
 
             // ── Sign in button ────────────────────────────────────────────────
             Button(
-                onClick  = { vm.loginUser(email, password) },
+                onClick  = { onLogin(email, password) },
                 enabled  = !isLoading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape  = RoundedCornerShape(12.dp),
@@ -237,41 +261,51 @@ fun LoginScreen(
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Sign in", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text("log in", fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 }
             }
 
-            // ── Divider ───────────────────────────────────────────────────────
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                HorizontalDivider(modifier = Modifier.weight(1f), thickness = 0.5.dp, color = EverGreenLight)
-                Text("  or continue with  ", fontSize = 12.sp, color = CarbonGrayLight)
-                HorizontalDivider(modifier = Modifier.weight(1f), thickness = 0.5.dp, color = EverGreenLight)
-            }
 
-            // ── Google sign-in button ─────────────────────────────────────────
-            OutlinedButton(
-                onClick  = { vm.signInWithGoogle(context) },
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape  = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = CarbonGray)
-            ) {
-                Text("G", fontSize = 16.sp, color = Color(0xFFEA4335), fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(10.dp))
-                Text("Continue with Google", fontSize = 14.sp)
-            }
 
             // ── Sign up link ──────────────────────────────────────────────────
             Row(modifier = Modifier.padding(top = 28.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Text("Don't have an account? ", fontSize = 13.sp, color = CarbonGrayLight)
+                Text("Don't have an account? ", fontSize = 13.sp, color = Color.Black)
                 Text(
                     text      = "Sign up",
                     fontSize  = 13.sp,
                     color     = EverGreenPrimary,
                     fontWeight = FontWeight.Medium,
-                    modifier  = Modifier.clickable { navController.navigate(Routes.REGISTER) }
+                    modifier  = Modifier.clickable { onNavigateToRegister() }
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Login Light Mode")
+@Composable
+fun LoginScreenPreview() {
+    EverGreenTheme(darkTheme = false) {
+        LoginScreenContent(
+            isLoading = false,
+            errorMsg = null,
+            onLogin = { _, _ -> },
+            onNavigateToRegister = {},
+            onClearError = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Login Dark Mode")
+@Composable
+fun LoginScreenDarkPreview() {
+    EverGreenTheme(darkTheme = true) {
+        LoginScreenContent(
+            isLoading = false,
+            errorMsg = null,
+            onLogin = { _, _ -> },
+            onNavigateToRegister = {},
+            onClearError = {}
+        )
     }
 }

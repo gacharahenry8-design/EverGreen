@@ -5,5 +5,7 @@ data class UserModel(
     val username: String = "",
     val email: String = "",
     val totalPoints: Int = 0,
-    val level: String = ""
+    val level: String = "",
+    val profileImageUrl: String? = null,
+    val bio: String? = null
 )

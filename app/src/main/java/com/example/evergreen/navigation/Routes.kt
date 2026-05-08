@@ -14,7 +14,11 @@ object Routes {
     const val ADD_CARBON = "add_carbon"
     const val HABITS = "habits"
     const val RECOMMENDATIONS = "recommendations"
+
     const val PROFILE = "profile"
+
+    const val EDIT_PROFILE = "edit_profile"
+    const val NOTIFICATIONS = "notifications"
 
     // Detail Screens (Using curly braces for dynamic arguments)
     const val CARBON_DETAIL = "carbon_detail/{entryId}"

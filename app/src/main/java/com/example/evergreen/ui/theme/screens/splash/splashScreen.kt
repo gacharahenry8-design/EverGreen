@@ -17,17 +17,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.evergreen.navigation.Routes
-import com.example.evergreen.navigation.navigateToDashboard
-import com.example.evergreen.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import com.example.evergreen.ui.theme.EverGreenTheme
+
+// ─── Colors ───────────────────────────────────────────────────────────────────
+val EverGreenDark    = Color(0xFF1B5E20)
+val EverGreenPrimary = Color(0xFF2E7D32)
+val EverGreenMid     = Color(0xFF388E3C)
+val EverGreenAccent  = Color(0xFF66BB6A)
+val EverGreenLight   = Color(0xFFA5D6A7)
+val EverGreenPale    = Color(0xFFE8F5E9)
+
+// ─── Route constants ─────────────────────────────────────────────────────────
+const val ROUTE_SPLASH    = "splash"
+const val ROUTE_LOGIN     = "login"
+const val ROUTE_DASHBOARD = "dashboard"
 
 // ─── Splash Screen ────────────────────────────────────────────────────────────
 @Composable
@@ -74,12 +85,8 @@ fun SplashScreen(navController: NavController) {
         delay(2200)
 
         val user = FirebaseAuth.getInstance().currentUser
-        if (user != null) {
-            navController.navigateToDashboard()
-        } else {
-            navController.navigate(Routes.LOGIN) {
-                popUpTo(Routes.SPLASH) { inclusive = true }
-            }
+        navController.navigate(if (user != null) ROUTE_DASHBOARD else ROUTE_LOGIN) {
+            popUpTo(ROUTE_SPLASH) { inclusive = true }
         }
     }
 
@@ -233,8 +240,6 @@ private fun BoxScope.CornerLeaves() {
 // ── Simple leaf SVG icon drawn with Canvas/Compose shapes ────────────────────
 @Composable
 private fun LeafIcon() {
-    // Using a simple Text emoji as placeholder — replace with
-    // an actual SVG vector drawable (res/drawable/ic_leaf.xml) in production
     Text(
         text     = "\uD83C\uDF3F",   // 🌿
         fontSize = 26.sp,
@@ -247,7 +252,6 @@ private fun LeafIcon() {
 @Composable
 fun SplashScreenPreview() {
     EverGreenTheme(darkTheme = false) {
-        // rememberNavController provides a fake controller for previewing
         val navController = rememberNavController()
         SplashScreen(navController = navController)
     }

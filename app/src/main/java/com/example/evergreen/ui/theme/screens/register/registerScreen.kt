@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -41,15 +40,50 @@ import com.example.evergreen.navigation.Routes
 import com.example.evergreen.navigation.navigateToLoginFromRegister
 import com.example.evergreen.ui.theme.*
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
 
 // ─── Register Screen ──────────────────────────────────────────────────────────
+/**
+ * Entry point for the Register Screen. Handles ViewModel and Navigation.
+ * Refactored to use a "stateless" Content composable to fix Preview render issues.
+ */
 @Composable
 fun RegisterScreen(
     navController: NavController,
     vm: AuthViewModel = viewModel()
 ) {
-    val context = LocalContext.current
+    val isLoading by vm.isLoading.collectAsState()
+    val errorMsg by vm.errorMessage.collectAsState()
+
+    // Handle navigation events from ViewModel
+    LaunchedEffect(Unit) {
+        vm.navigationEvent.collect { route ->
+            navController.navigate(route) {
+                popUpTo(Routes.REGISTER) { inclusive = true }
+            }
+        }
+    }
+
+    RegisterContent(
+        isLoading = isLoading,
+        errorMsg = errorMsg,
+        onSignUp = { email, pass, name -> vm.signUpUser(email, pass, name) },
+        onClearError = { vm.clearError() },
+        onNavigateToLogin = { navController.navigateToLoginFromRegister() }
+    )
+}
+
+/**
+ * UI Content for the Register Screen. Accepts state and callbacks directly,
+ * allowing it to be easily previewed without a ViewModel.
+ */
+@Composable
+fun RegisterContent(
+    isLoading: Boolean,
+    errorMsg: String?,
+    onSignUp: (email: String, pass: String, name: String) -> Unit,
+    onClearError: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
     val focusManager = LocalFocusManager.current
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -60,19 +94,7 @@ fun RegisterScreen(
     var showPassword     by remember { mutableStateOf(false) }
     var showConfirm      by remember { mutableStateOf(false) }
     
-    val isLoading by vm.isLoading.collectAsState()
-    val errorMsg by vm.errorMessage.collectAsState()
-
     val passwordStrength = getPasswordStrength(password)
-
-    // Handle navigation events from ViewModel
-    LaunchedEffect(Unit) {
-        vm.navigationEvent.collect { route ->
-            navController.navigate(route) {
-                popUpTo(Routes.REGISTER) { inclusive = true }
-            }
-        }
-    }
 
     // ── UI ────────────────────────────────────────────────────────────────────
     Box(
@@ -127,12 +149,12 @@ fun RegisterScreen(
                         text       = "EverGreen",
                         fontSize   = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color      = EverGreenDark
+                        color      = Color.Black
                     )
                     Text(
                         text          = "TRACK. REDUCE. SUSTAIN.",
                         fontSize      = 9.sp,
-                        color         = CarbonGrayLight,
+                        color         = Color.Black,
                         letterSpacing = 1.5.sp
                     )
                 }
@@ -143,13 +165,13 @@ fun RegisterScreen(
                 text       = "Create account",
                 fontSize   = 26.sp,
                 fontWeight = FontWeight.SemiBold,
-                color      = EverGreenDark,
+                color      = Color.Black,
                 modifier   = Modifier.fillMaxWidth()
             )
             Text(
                 text     = "Start your eco journey today",
                 fontSize = 14.sp,
-                color    = CarbonGrayLight,
+                color    = Color.Black,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp, bottom = 20.dp)
@@ -184,8 +206,8 @@ fun RegisterScreen(
             // ── Full name field ───────────────────────────────────────────────
             OutlinedTextField(
                 value         = fullName,
-                onValueChange = { fullName = it; vm.clearError() },
-                label         = { Text("Full name") },
+                onValueChange = { fullName = it; onClearError() },
+                label         = { Text("Full name", color = Color.Black) },
                 leadingIcon   = {
                     Icon(Icons.Filled.Person, contentDescription = "Name", tint = EverGreenAccent)
                 },
@@ -202,9 +224,12 @@ fun RegisterScreen(
                     .padding(bottom = 12.dp),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor   = EverGreenPrimary,
                     unfocusedBorderColor = EverGreenLight,
-                    focusedLabelColor    = EverGreenPrimary,
+                    focusedLabelColor    = Color.Black,
+                    unfocusedLabelColor = Color.Black,
                     cursorColor          = EverGreenPrimary
                 )
             )
@@ -212,8 +237,8 @@ fun RegisterScreen(
             // ── Email field ───────────────────────────────────────────────────
             OutlinedTextField(
                 value         = email,
-                onValueChange = { email = it; vm.clearError() },
-                label         = { Text("Email address") },
+                onValueChange = { email = it; onClearError() },
+                label         = { Text("Email address", color = Color.Black) },
                 leadingIcon   = {
                     Icon(Icons.Filled.Email, contentDescription = "Email", tint = EverGreenAccent)
                 },
@@ -230,9 +255,12 @@ fun RegisterScreen(
                     .padding(bottom = 12.dp),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor   = EverGreenPrimary,
                     unfocusedBorderColor = EverGreenLight,
-                    focusedLabelColor    = EverGreenPrimary,
+                    focusedLabelColor    = Color.Black,
+                    unfocusedLabelColor = Color.Black,
                     cursorColor          = EverGreenPrimary
                 )
             )
@@ -240,8 +268,8 @@ fun RegisterScreen(
             // ── Password field + strength bar ─────────────────────────────────
             OutlinedTextField(
                 value         = password,
-                onValueChange = { password = it; vm.clearError() },
-                label         = { Text("Password") },
+                onValueChange = { password = it; onClearError() },
+                label         = { Text("Password", color = Color.Black) },
                 leadingIcon   = {
                     Icon(Icons.Filled.Lock, contentDescription = "Password", tint = EverGreenAccent)
                 },
@@ -268,9 +296,12 @@ fun RegisterScreen(
                 modifier   = Modifier.fillMaxWidth(),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor   = EverGreenPrimary,
                     unfocusedBorderColor = EverGreenLight,
-                    focusedLabelColor    = EverGreenPrimary,
+                    focusedLabelColor    = Color.Black,
+                    unfocusedLabelColor = Color.Black,
                     cursorColor          = EverGreenPrimary
                 )
             )
@@ -323,7 +354,7 @@ fun RegisterScreen(
                             PasswordStrength.WEAK   -> StatusDanger
                             PasswordStrength.FAIR   -> LeafGold
                             PasswordStrength.STRONG -> EverGreenPrimary
-                            PasswordStrength.NONE   -> CarbonGrayLight
+                            PasswordStrength.NONE   -> Color.Black
                         },
                         modifier = Modifier.padding(top = 3.dp)
                     )
@@ -335,8 +366,8 @@ fun RegisterScreen(
             // ── Confirm password field ────────────────────────────────────────
             OutlinedTextField(
                 value         = confirmPassword,
-                onValueChange = { confirmPassword = it; vm.clearError() },
-                label         = { Text("Confirm password") },
+                onValueChange = { confirmPassword = it; onClearError() },
+                label         = { Text("Confirm password", color = Color.Black) },
                 leadingIcon   = {
                     Icon(Icons.Filled.Lock, contentDescription = "Confirm", tint = EverGreenAccent)
                 },
@@ -359,7 +390,7 @@ fun RegisterScreen(
                 keyboardActions = KeyboardActions(
                     onDone = { 
                         if (password == confirmPassword) {
-                            vm.signUpUser(email, password, fullName)
+                            onSignUp(email, password, fullName)
                         }
                     }
                 ),
@@ -375,9 +406,12 @@ fun RegisterScreen(
                     .padding(bottom = 16.dp),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor   = EverGreenPrimary,
                     unfocusedBorderColor = EverGreenLight,
-                    focusedLabelColor    = EverGreenPrimary,
+                    focusedLabelColor    = Color.Black,
+                    unfocusedLabelColor = Color.Black,
                     cursorColor          = EverGreenPrimary,
                     errorBorderColor     = StatusDanger
                 )
@@ -387,7 +421,7 @@ fun RegisterScreen(
             Button(
                 onClick  = { 
                     if (password == confirmPassword) {
-                        vm.signUpUser(email, password, fullName)
+                        onSignUp(email, password, fullName)
                     }
                 },
                 enabled  = !isLoading,
@@ -415,51 +449,12 @@ fun RegisterScreen(
                 }
             }
 
-            // ── Divider ───────────────────────────────────────────────────────
-            Row(
-                modifier          = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(
-                    modifier  = Modifier.weight(1f),
-                    thickness = 0.5.dp,
-                    color     = EverGreenLight
-                )
-                Text(
-                    text     = "  or sign up with  ",
-                    fontSize = 12.sp,
-                    color    = CarbonGrayLight
-                )
-                HorizontalDivider(
-                    modifier  = Modifier.weight(1f),
-                    thickness = 0.5.dp,
-                    color     = EverGreenLight
-                )
-            }
-
-            // ── Google sign-up button ─────────────────────────────────────────
-            OutlinedButton(
-                onClick  = { vm.signInWithGoogle(context) },
-                enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape  = RoundedCornerShape(12.dp),
-                border = ButtonDefaults.outlinedButtonBorder.copy(width = 0.5.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = CarbonGray)
-            ) {
-                Text("G", fontSize = 16.sp, color = Color(0xFFEA4335), fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(10.dp))
-                Text("Continue with Google", fontSize = 14.sp, color = CarbonGray)
-            }
 
             // ── Terms ─────────────────────────────────────────────────────────
             Text(
                 text     = "By creating an account you agree to our Terms of Service and Privacy Policy",
                 fontSize = 11.sp,
-                color    = CarbonGrayLight,
+                color    = Color.Black,
                 modifier = Modifier.padding(top = 16.dp),
                 lineHeight = 16.sp
             )
@@ -473,7 +468,7 @@ fun RegisterScreen(
                 Text(
                     text     = "Already have an account? ",
                     fontSize = 13.sp,
-                    color    = CarbonGrayLight
+                    color    = Color.Black
                 )
                 Text(
                     text       = "Sign in",
@@ -481,7 +476,7 @@ fun RegisterScreen(
                     color      = EverGreenPrimary,
                     fontWeight = FontWeight.Medium,
                     modifier   = Modifier.clickable {
-                        navController.navigateToLoginFromRegister()
+                        onNavigateToLogin()
                     }
                 )
             }
@@ -515,8 +510,13 @@ fun getPasswordStrength(password: String): PasswordStrength {
 @Composable
 fun RegisterScreenPreview() {
     EverGreenTheme(darkTheme = false) {
-        val navController = rememberNavController()
-        RegisterScreen(navController = navController)
+        RegisterContent(
+            isLoading = false,
+            errorMsg = null,
+            onSignUp = { _, _, _ -> },
+            onClearError = {},
+            onNavigateToLogin = {}
+        )
     }
 }
 
@@ -524,7 +524,12 @@ fun RegisterScreenPreview() {
 @Composable
 fun RegisterScreenDarkPreview() {
     EverGreenTheme(darkTheme = true) {
-        val navController = rememberNavController()
-        RegisterScreen(navController = navController)
+        RegisterContent(
+            isLoading = false,
+            errorMsg = "Example error message",
+            onSignUp = { _, _, _ -> },
+            onClearError = {},
+            onNavigateToLogin = {}
+        )
     }
 }

@@ -1,7 +1,6 @@
 package com.example.evergreen.data
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.example.evergreen.models.CarbonEntry
@@ -10,6 +9,9 @@ import com.example.evergreen.models.UserModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 class EverGreenViewModel : ViewModel() {
 
@@ -28,6 +30,9 @@ class EverGreenViewModel : ViewModel() {
     private val _habits = MutableStateFlow<List<HabitModel>>(emptyList())
     val habits: StateFlow<List<HabitModel>> = _habits.asStateFlow()
 
+    val habitsCompletedCount: Int
+        get() = _habits.value.size
+
     // ── Derived dashboard stats ───────────────────────────────────────────────
     val todayEmission: Double
         get() = _carbonEntries.value.lastOrNull()?.totalEmission ?: 0.0
@@ -38,16 +43,16 @@ class EverGreenViewModel : ViewModel() {
     val streak: Int
         get() {
             val dates = _carbonEntries.value.map { 
-                java.time.LocalDate.ofInstant(
-                    java.time.Instant.ofEpochMilli(it.timestamp), 
-                    java.time.ZoneId.systemDefault()
+                LocalDate.ofInstant(
+                    Instant.ofEpochMilli(it.timestamp), 
+                    ZoneId.systemDefault()
                 ) 
             }.distinct().sortedDescending()
             
             if (dates.isEmpty()) return 0
             
             var currentStreak = 0
-            var checkDate = java.time.LocalDate.now()
+            var checkDate = LocalDate.now()
             
             // If no entry today, check if there was one yesterday to continue streak
             if (dates.first() != checkDate && dates.first() != checkDate.minusDays(1)) {
@@ -86,13 +91,9 @@ class EverGreenViewModel : ViewModel() {
 
     fun getLevelProgress(points: Int): Float = when {
         points >= 1000 -> 1f
-        // Progress from 500 to 1000 (Range of 500)
         points >= 500  -> (points - 500) / 500f
-        // Progress from 250 to 500 (Range of 250)
         points >= 250  -> (points - 250) / 250f
-        // Progress from 100 to 250 (Range of 150)
         points >= 100  -> (points - 100) / 150f
-        // Progress from 0 to 100 (Range of 100)
         else           -> points / 100f
     }
 
@@ -185,6 +186,34 @@ class EverGreenViewModel : ViewModel() {
             .addOnCompleteListener { onDone() }
     }
 
+    fun saveCarbonEntry(
+        transportEmission: Double,
+        electricityEmission: Double,
+        foodEmission: Double,
+        totalEmission: Double,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val uid = auth.currentUser?.uid ?: return
+        val key = db.child("CarbonEntries").child(uid).push().key ?: return
+        val entry = CarbonEntry(
+            id                  = key,
+            userId              = uid,
+            transportEmission   = transportEmission,
+            electricityEmission = electricityEmission,
+            foodEmission        = foodEmission,
+            totalEmission       = totalEmission
+            // timestamp defaults to System.currentTimeMillis() in model
+        )
+        db.child("CarbonEntries").child(uid).child(key)
+            .setValue(entry)
+            .addOnSuccessListener {
+                updateUserPoints(uid, 10)
+                onSuccess()
+            }
+            .addOnFailureListener { onError(it.message ?: "Failed to save") }
+    }
+
     // ── Firebase: load habits ─────────────────────────────────────────────────
     fun loadHabits() {
         val uid = auth.currentUser?.uid ?: return
@@ -225,31 +254,3 @@ class EverGreenViewModel : ViewModel() {
     // ── Firebase: sign out ────────────────────────────────────────────────────
     fun signOut() = auth.signOut()
 }
-
-fun saveCarbonEntry(
-    transportEmission: Double,
-    electricityEmission: Double,
-    foodEmission: Double,
-    totalEmission: Double,
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit
-) {
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    val entry = CarbonEntry(
-        userId              = userId,
-        transportEmission   = transportEmission,
-        electricityEmission = electricityEmission,
-        foodEmission        = foodEmission,
-        totalEmission       = totalEmission,
-        date                = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-    )
-    val ref = FirebaseDatabase.getInstance().getReference("CarbonEntries").push()
-    entry.id = ref.key
-    ref.setValue(entry)
-        .addOnSuccessListener {
-            updateUserPoints(userId, 10)
-            onSuccess()
-        }
-        .addOnFailureListener { onError(it.message ?: "Failed") }
-}
-
