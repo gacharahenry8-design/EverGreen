@@ -8,8 +8,9 @@ class EverGreenApp : Application() {
         super.onCreate()
         
         // Initialize Cloudinary
+        // TODO: Replace "YOUR_CLOUD_NAME" with your actual Cloudinary cloud name
         val config = mapOf(
-            "cloud_name" to "YOUR_CLOUD_NAME", // User should replace this
+            "cloud_name" to "YOUR_CLOUD_NAME",
             "secure" to true
         )
         MediaManager.init(this, config)

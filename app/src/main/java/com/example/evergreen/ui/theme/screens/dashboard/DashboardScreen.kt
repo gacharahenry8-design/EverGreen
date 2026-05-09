@@ -1,6 +1,7 @@
 package com.example.evergreen.ui.theme.screens.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.evergreen.data.EverGreenViewModel
 import com.example.evergreen.models.UserModel
 import com.example.evergreen.navigation.*
@@ -172,10 +175,19 @@ fun DashboardContent(
                                 .clickable { navController.goToProfile() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                user?.username?.take(1)?.uppercase() ?: "U",
-                                color = Color.White
-                            )
+                            if (!user?.profileImageUrl.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = user?.profileImageUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(
+                                    user?.username?.take(1)?.uppercase() ?: "U",
+                                    color = Color.White
+                                )
+                            }
                         }
                     }
                 }
@@ -359,11 +371,18 @@ fun DashboardContent(
 
 // ── Shared bottom nav bar ─────────────────────────────────────────────────────
 @Composable
-fun EverGreenBottomBar(navController: NavController, currentRoute: String) {
+fun EverGreenBottomBar(
+    navController: NavController, 
+    currentRoute: String,
+    vm: EverGreenViewModel = viewModel()
+) {
+    val user by vm.user.collectAsState()
+    
     NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
         bottomNavItems.forEach { item ->
+            val isSelected = currentRoute == item.route
             NavigationBarItem(
-                selected = currentRoute == item.route,
+                selected = isSelected,
                 onClick  = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
@@ -374,7 +393,23 @@ fun EverGreenBottomBar(navController: NavController, currentRoute: String) {
                     }
                 },
                 icon  = {
-                    Icon(item.icon, item.label, Modifier.size(22.dp))
+                    if (item.route == Routes.PROFILE && !user?.profileImageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = user?.profileImageUrl,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    width = 1.5.dp,
+                                    color = if (isSelected) EverGreenPrimary else Color.Transparent,
+                                    shape = CircleShape
+                                ),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(item.icon, item.label, Modifier.size(22.dp))
+                    }
                 },
                 label  = { Text(item.label, fontSize = 10.sp) },
                 colors = NavigationBarItemDefaults.colors(

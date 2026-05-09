@@ -164,6 +164,19 @@ class EverGreenViewModel : ViewModel() {
             })
     }
 
+    // ── Firebase: Update Profile ──────────────────────────────────────────────
+    fun updateUserProfile(username: String, email: String, bio: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return
+        val updates = mapOf(
+            "username" to username,
+            "email" to email,
+            "bio" to bio
+        )
+        db.child("Users").child(uid).updateChildren(updates)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onError(it.message ?: "Update failed") }
+    }
+
     // ── Firebase: load carbon entries ─────────────────────────────────────────
     fun loadCarbonEntries() {
         val uid = auth.currentUser?.uid ?: return
@@ -256,24 +269,22 @@ class EverGreenViewModel : ViewModel() {
     }
 
     // ── Cloudinary: Upload image ─────────────────────────────────────────────
-    fun uploadProfileImage(imageUri: Uri) {
+    fun uploadProfileImage(imageUri: Uri, onStart: () -> Unit = {}, onSuccess: (String) -> Unit = {}, onError: (String) -> Unit = {}) {
         MediaManager.get().upload(imageUri)
-            .unsigned("evergreen_preset") // Use the preset you created
-            .option("folder", "user_uploads") // Optional: organize files
+            .unsigned("v99p5sx8") // Use the preset you provided
+            .option("folder", "user_uploads")
             .callback(object : UploadCallback {
                 override fun onStart(requestId: String) {
-                    // Show a loading spinner in your UI
+                    onStart()
                 }
-                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {
-                    // Update a progress bar
-                }
+                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
                 override fun onSuccess(requestId: String, resultData: Map<*, *>) {
                     val imageUrl = resultData["secure_url"] as String
-                    // SUCCESS! Now save this URL to your Firebase database
                     saveUrlToFirebase(imageUrl)
+                    onSuccess(imageUrl)
                 }
                 override fun onError(requestId: String, error: ErrorInfo) {
-                    // Handle the error (e.g., Toast message)
+                    onError(error.description)
                 }
                 override fun onReschedule(requestId: String, error: ErrorInfo) {}
             })
